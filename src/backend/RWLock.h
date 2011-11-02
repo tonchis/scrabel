@@ -20,6 +20,8 @@ class RWLock {
     int readers;
     sem_t *readers_mutex;
     sem_t *no_readers;
+
+    queue<sem_t*> writers;
 };
 
 #endif

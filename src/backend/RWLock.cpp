@@ -12,6 +12,10 @@ RWLock :: RWLock() {
 
 RWLock :: ~RWLock() {
   sem_destroy(is_writing_mutex);
+  sem_destroy(write_complete);
+
+  sem_destroy(readers_mutex);
+  sem_destroy(no_readers);
 }
 
 void RWLock :: rlock() {
