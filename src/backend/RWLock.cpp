@@ -1,64 +1,72 @@
 #include "RWLock.h"
 
 RWLock :: RWLock() {
-  sem_init(is_writing_mutex, 0, 1);
-  sem_init(write_complete, 0, 0);
-  is_writing = false;
-
-  sem_init(readers_mutex, 0, 1);
-  sem_init(no_readers, 0, 0);
-  readers = 0;
+  sem_init(mutex, 0, 1);
 }
 
 RWLock :: ~RWLock() {
-  sem_destroy(is_writing_mutex);
-  sem_destroy(write_complete);
-
-  sem_destroy(readers_mutex);
-  sem_destroy(no_readers);
+  sem_destroy(mutex);
 }
 
 void RWLock :: rlock() {
-  sem_wait(is_writing_mutex);
-  if(!is_writing){
-    sem_post(is_writing_mutex);
-
-    sem_wait(readers_mutex);
-    readers++;
-    sem_post(readers_mutex);
+  sem_wait(mutex);
+  if(writers_queue.empty()){
+    sem_post(mutex);
   }else{
-    sem_post(is_writing_mutex);
-    sem_wait(write_complete);
-    sem_post(write_complete); // cascada para avisarles a los pibes que se puede leer
+    Batch* last_writer = writers_queue.back();
+    last_writer->readers++;
+
+    sem_post(mutex);
+    sem_wait(last_writer->readers_sem);
+    sem_post(last_writer->readers_sem); // cascada para que sigamos leyendo todos
   }
 }
 
 void RWLock :: wlock() {
-  sem_wait(readers_mutex);
-  if(readers > 0){
-    sem_post(readers_mutex);
-    sem_wait(no_readers);
-  }
+  Batch* new_batch = new Batch();
 
-  sem_wait(is_writing_mutex);
-  if(is_writing)
-    sem_wait(write_complete);
-  is_writing = true;
-  sem_post(is_writing_mutex);
+  sem_wait(mutex);
+  writers_queue.push(new_batch);
+  if(writers_queue.size() == 1)
+    sem_post(new_batch->write_permission);
+  sem_post(mutex);
+  sem_wait(new_batch->write_permission);
 }
 
 void RWLock :: runlock() {
-  sem_wait(readers_mutex);
-  readers--;
-  if(readers == 0)
-    sem_post(no_readers);
-  sem_post(readers_mutex);
+  sem_wait(mutex);
+  if(!writers_queue.empty()){
+    Batch* current_batch = writers_queue.front();
+    current_batch->readers--;
+
+    if(current_batch->readers > 0){
+      sem_post(mutex);
+    }else{
+      writers_queue.pop();
+      delete current_batch;
+
+      if(!writers_queue.empty())
+        sem_post(writers_queue.front()->write_permission);
+      sem_post(mutex);
+    }
+  }else
+    sem_post(mutex);
 }
 
 void RWLock :: wunlock() {
-  sem_wait(is_writing_mutex);
-  is_writing = false;
-  sem_post(is_writing_mutex);
-  sem_post(write_complete);
+  sem_wait(mutex);
+  Batch* current_batch = writers_queue.front();
+  if(current_batch->readers > 0){
+    sem_post(mutex);
+    sem_post(current_batch->readers_sem);
+  }else{
+    Batch* current_batch = writers_queue.front();
+    writers_queue.pop();
+    delete current_batch;
+
+    if(!writers_queue.empty())
+      sem_post(writers_queue.front()->write_permission);
+    sem_post(mutex);
+  }
 }
 
