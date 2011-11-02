@@ -1,6 +1,5 @@
 #ifndef RWLock_h
 #define RWLock_h
-#include <iostream>
 #include <queue>
 #include <semaphore.h>
 
