@@ -3,6 +3,7 @@
 
 RWLock :: RWLock() {
   sem_init(&mutex, 0, 1);
+  readers = 0;
 }
 
 RWLock :: ~RWLock() {
@@ -11,6 +12,7 @@ RWLock :: ~RWLock() {
 
 void RWLock :: rlock() {
   sem_wait(&mutex);
+  readers++;
   if(writers_queue.empty()){
     printf("rlock: no hay nadie en la cola\n");
     sem_post(&mutex);
@@ -30,23 +32,31 @@ void RWLock :: wlock() {
 
   sem_wait(&mutex);
   writers_queue.push(new_batch);
-  if(writers_queue.size() == 1)
+  if(writers_queue.size() == 1 && readers == 0)
     sem_post(&(new_batch->write_permission));
+  else
+    if(readers > 0) printf("wlock: hay alguien leyendo!!\n");
+
   sem_post(&mutex);
   sem_wait(&(new_batch->write_permission));
+  printf("wlock: a escribir!!\n");
 }
 
 void RWLock :: runlock() {
   sem_wait(&mutex);
+  readers--;
   if(!writers_queue.empty()){
     Batch* current_batch = writers_queue.front();
-    current_batch->readers--;
+    if(current_batch->readers > 0)
+      current_batch->readers--;
 
     if(current_batch->readers > 0){
       sem_post(&mutex);
     }else{
-      writers_queue.pop();
-      delete current_batch;
+      if(current_batch->writed){
+        writers_queue.pop();
+        delete current_batch;
+      }
 
       if(!writers_queue.empty())
         sem_post(&(writers_queue.front()->write_permission));
@@ -59,6 +69,7 @@ void RWLock :: runlock() {
 void RWLock :: wunlock() {
   sem_wait(&mutex);
   Batch* current_batch = writers_queue.front();
+  current_batch->writed = true;
   if(current_batch->readers > 0){
     sem_post(&(current_batch->readers_sem));
     sem_post(&mutex);

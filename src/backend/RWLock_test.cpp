@@ -4,7 +4,7 @@
 #include "RWLock.h"
 #define CANT_THREADS 10
 
-int compartida;
+int compartida = 0;
 RWLock lock;
 
 void *read(void *p_args){
@@ -13,6 +13,7 @@ void *read(void *p_args){
     sleep(args[1]);
 
   lock.rlock();
+  sleep(2);
   printf("Compartida: %d\n", compartida);
   lock.runlock();
 
