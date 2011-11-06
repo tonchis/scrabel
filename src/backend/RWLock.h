@@ -9,13 +9,13 @@ struct Batch {
   sem_t write_permission;
   sem_t readers_sem;
   int readers;
-  bool writed;
+  bool written;
 
   Batch(){
     sem_init(&write_permission, 0, 0);
     sem_init(&readers_sem, 0, 0);
     readers = 0;
-    writed = false;
+    written = false;
   }
 
   ~Batch(){
