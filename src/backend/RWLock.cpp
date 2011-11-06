@@ -7,6 +7,11 @@ RWLock :: RWLock() {
 }
 
 RWLock :: ~RWLock() {
+  while(!writers_queue.empty()){
+    Batch* current_batch = writers_queue.front();
+    writers_queue.pop();
+    delete current_batch;
+  }
   sem_destroy(&mutex);
 }
 
