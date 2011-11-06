@@ -21,7 +21,7 @@ Esta petición intenta poner una letra en el tablero de letras. El algoritmo ori
 \begin{algorithm}[H]
 \caption{letraRecibida($mensaje$)}
 \begin{algorithmic}[1]
-    \STATE $casillero \leftarrow$ interpretarCasilleroDeMensaje($mensaje$)
+    \STATE $casillero \leftarrow$ decodificarCasilleroDeMensaje($mensaje$)
     \IF{esFichaValidaEnPalabra($casillero$, $palabra$)}
         \STATE $palabra \leftarrow palabra + letra(casillero)$.
         \STATE $tableroLetras[fila(casillero)][columna(casillero)] \leftarrow letra(casillero)$.
@@ -39,9 +39,9 @@ Esta petición intenta poner una letra en el tablero de letras. El algoritmo ori
 \caption{letraRecibida'($mensaje$)}
 \begin{algorithmic}[1]
     \STATE $casillero \leftarrow$ interpretarCasilleroDeMensaje($mensaje$)
-    \STATE wlock($locksLetras[fila(casillero)][columna(casillero)]$)
+    \STATE wlock($locksLetras[fila(casillero)][columna(casillero)]$).
     \STATE ...
-    \STATE wunlock($locksLetras[fila(casillero)][columna(casillero)]$)
+    \STATE wunlock($locksLetras[fila(casillero)][columna(casillero)]$).
 \end{algorithmic}
 \end{algorithm}
 
@@ -78,12 +78,12 @@ Por otro lado, la función auxiliar original para indicar si una ficha es válid
 \begin{algorithmic}[1]
     \STATE ...
     \FOR{cada $casillero'$ entre $palabra$ y $casillero$}
-        \STATE rlock($locksPalabras[fila(casillero')][columna(casillero')]$)
+        \STATE rlock($locksPalabras[fila(casillero')][columna(casillero')]$).
         \IF{$casillero' \notin palabra$ y $tableroPalabras[fila(casillero')][columna(casillero')] = \emptyset$}
-            \STATE runlock($locksPalabras[fila(casillero')][columna(casillero')]$)
+            \STATE runlock($locksPalabras[fila(casillero')][columna(casillero')]$).
             \RETURN INVALIDA.
         \ENDIF
-        \STATE runlock($locksPalabras[fila(casillero')][columna(casillero')]$)
+        \STATE runlock($locksPalabras[fila(casillero')][columna(casillero')]$).
     \ENDFOR
     \STATE ...
 \end{algorithmic}
@@ -106,13 +106,61 @@ Por último, la función auxiliar para quitar todas las letras de una palabra:
 \caption{quitarLetras'($palabra$)}
 \begin{algorithmic}[1]
     \FOR{cada $casillero$ en $palabra$}
-        \STATE wlock($locksLetras[fila(casillero)][columna(casillero)]$)
+        \STATE wlock($locksLetras[fila(casillero)][columna(casillero)]$).
         \STATE $tableroLetras[fila(casillero)][columna(casillero)] \leftarrow \emptyset$.
-        \STATE wunlock($locksLetras[fila(casillero)][columna(casillero)]$)
+        \STATE wunlock($locksLetras[fila(casillero)][columna(casillero)]$).
     \ENDFOR
 \end{algorithmic}
 \end{algorithm}
 
 \subsubsection{Palabra}
 
+Esta petición pone todas las letras acumulada de la palabra actual del usuario en el tablero de letras. El algoritmo original tiene el siguiente aspecto:
+
+\begin{algorithm}[H]
+\caption{palabraRecibida()}
+\begin{algorithmic}[1]
+    \FOR{cada $casillero$ en $palabra$}
+        \STATE $tableroPalabras[fila(casillero)][columna(casillero)] \leftarrow letra(casillero)$.
+    \ENDFOR
+    \STATE $palabra \leftarrow \emptyset$.
+    \STATE enviar(OK).
+\end{algorithmic}
+\end{algorithm}
+
+\noindent Para lograr que el pasaje de todas las letras no sea interrumpido por ningún motivo, utilizamos el lock completo del tablero de palabras para todo el algoritmo en mod escritura:
+
+\begin{algorithm}[H]
+\caption{palabraRecibida'()}
+\begin{algorithmic}[1]
+    \STATE wlock($lockPalabras$).
+    \STATE ...
+    \STATE wunlock($lockPalabras$).
+\end{algorithmic}
+\end{algorithm}
+
 \subsubsection{Update}
+
+Esta petición envia el estado del tablero de palabras. El algoritmo original tiene el siguiente aspecto:
+
+\begin{algorithm}[H]
+\caption{actualizacionRequerida()}
+\begin{algorithmic}[1]
+    \STATE $buffer \leftarrow \emptyset$
+    \FOR{cada $casillero$ en $tableroPalabras$}
+        \STATE $buffer \leftarrow buffer +$ codificarCasilleroParaMensaje($casillero$).
+    \ENDFOR
+    \STATE enviar($buffer$)
+\end{algorithmic}
+\end{algorithm}
+
+\noindent De la misma manera que en el caso anterior, utilizamos el lock completo del tablero de palabras para todo el algoritmo, pero esta vez en modo lectura, para que cualquiera pueda pedir una actualización simultáneamente:
+
+\begin{algorithm}[H]
+\caption{actualizacionRequerida'()}
+\begin{algorithmic}[1]
+    \STATE rlock($lockPalabras$).
+    \STATE ...
+    \STATE runlock($lockPalabras$).
+\end{algorithmic}
+\end{algorithm}
