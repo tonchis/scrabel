@@ -1,0 +1,49 @@
+% Informacion sobre el package para el sistema
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{algo2symb}[2004/04/06 v0.1 Para componer simbolitos frecuentemente usados en AED2]
+
+% Imprimir un mensajito al procesar un .tex que use este package
+\typeout{Cargando package 'aed2symb' v0.1 (07/04/2004)}
+
+% Aseguremonos de cargar los packages de la AMS
+\RequirePackage{amsmath}
+\RequirePackage{amssymb}
+
+% Redefinimos \implies para que use la flecha corta
+\renewcommand\implies{\DOTSB \;\Rightarrow \;}
+
+
+% Macro general para componer un operador con subindice sin cursiva
+\newcommand\opsub[2]{\ensuremath{#1_{\mathrm{#2}}}}
+
+% Conectivos logicos con "luego"
+\newcommand\yluego{\opsub{\land}{\scriptscriptstyle{L}}}
+\newcommand\oluego{\opsub{\lor}{\scriptscriptstyle{L}}}
+\newcommand\impluego{\opsub{\Rightarrow}{\scriptscriptstyle{L}}}
+
+% Simbolos del TAD Secu
+\newcommand\secuvacia{\ensuremath{<>}}
+\newcommand\puntito{\ensuremath{\bullet}}
+\newcommand\circulito{\ensuremath{\circ}}
+
+% Complejidad
+\newcommand\Ode[1]{\ensuremath{O(#1)}}
+\newcommand\ode[1]{\ensuremath{o(#1)}}
+\newcommand\Omegade[1]{\ensuremath{\Omega(#1)}}
+\newcommand\Thetade[1]{\ensuremath{\Theta(#1)}}
+
+% Para operador = con subindice que no debe ir en cursiva
+\newcommand\igsub[1]{\opsub{=}{#1}}
+
+% En particular, la igualdad observacional se usa mucho
+\newcommand\igobs{\igsub{obs}}
+
+% En particular, la hipotesis inductiva se usa mucho
+\newcommand\ighi{\igsub{HI}}
+
+% Para indicar la presencia de un argumento en notacion infija o sufija
+\newcommand\argumento{\ensuremath{\bullet}}
+
+% Para componer el nombre de un TAD en small capitals
+% Esto funciona OK tanto en modo texto como math
+\newcommand\nombretad[1]{\textsc{#1}}
