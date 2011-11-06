@@ -1,3 +1,40 @@
 \section{Backend}
 
 \subsection{Multithreading}
+
+Para lograr que el backend del servidor sea mutlithreading, utilizamos la librería pthreads del sistema. Cada vez que el servidor acepta una nueva conexión, se levanta un nuevo thread apuntando a la función \textit{atendedor\_de\_jugador}. Para poder mantener control de los threads, tenemos como variable global un \textit{set} de threads.
+
+\ 
+\begin{algorithmic}
+\IF{socketfd\_cliente = accept(socket\_servidor, ...) == -1}
+  \STATE error: ``Error al aceptar la conexión.''
+\ELSE
+  \STATE pthread\_t tid
+  \STATE pthread\_create(\&tid, NULL, atendedor\_de\_jugador, (void*) socketfd\_cliente)
+  \STATE threads.insert(\&tid)
+\ENDIF
+\end{algorithmic}
+\
+
+Luego, cuando una conexión se interrumpe, debemos cerrar el thread:
+\
+\begin{algorithm}[H]
+\caption{terminar\_servidor\_de\_jugador(socket\_fd, palabra\_actual)}
+\begin{algorithmic}[1]
+\STATE close(socket\_fd)
+\STATE quitar\_letras(palabra\_actual)
+\STATE pthread\_exit((void*) -1)
+\end{algorithmic}
+\end{algorithm}
+
+Además, cuando se cierra el servidor, hay que cerrar todos los threads que quedan sueltos.
+\
+\begin{algorithm}[H]
+\caption{cerrar\ _servidor(signal)}
+\begin{algorithmic}
+\STATE close(socket\_servidor)
+\FOR{thread \textbf{en} threads}
+  \STATE pthread\_kill(thread, 9)
+\ENDFOR
+\end{algorithmic}
+\end{algorithm}
