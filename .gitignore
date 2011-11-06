@@ -6,3 +6,4 @@ informe/*.log
 informe/*.out
 informe/*.gz
 informe/*.toc
+informe/*.pdf
