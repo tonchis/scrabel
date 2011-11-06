@@ -1,0 +1,118 @@
+\subsection{Locks}
+
+Para asegurar la correcta sincronización entre clientes, creamos los siguientes \emph{rwlocks}:
+
+\begin{itemize}
+
+    \item uno para todo el tablero de palabras, al cual llamaremos $lockPalabras$;
+    
+    \item uno para cada casillero del tablero de palabras, por lo cual llamaremos $locksPalabras[i][j]$ al \emph{rwlock} correspondiente al casillero de la fila $i$ y columna $j$ del tablero de palabras;
+    
+    \item uno para cada casillero del tablero de letras, por lo cual llamaremos $locksLetras[i][j]$ al \emph{rwlock} correspondiente al casillero de la fila $i$ y columna $j$ del tablero de letras.
+
+\end{itemize}
+
+El motivo de esta desición la vamos a ir explicando en cada una de las peticiones de cliente que puede recibir el servidor.
+
+\subsubsection{Letra}
+
+Esta petición intenta poner una letra en el tablero de letras. El algoritmo original tiene el siguiente aspecto:
+
+\begin{algorithm}[H]
+\caption{letraRecibida($mensaje$)}
+\begin{algorithmic}[1]
+    \STATE $casillero \leftarrow$ interpretarCasilleroDeMensaje($mensaje$)
+    \IF{esFichaValidaEnPalabra($casillero$, $palabra$)}
+        \STATE $palabra \leftarrow palabra + letra(casillero)$.
+        \STATE $tableroLetras[fila(casillero)][columna(casillero)] \leftarrow letra(casillero)$.
+        \STATE enviar(OK).
+    \ELSE
+        \STATE quitarLetras($palabra$).
+        \STATE enviar(ERROR).
+    \ENDIF
+\end{algorithmic}
+\end{algorithm}
+
+\noindent En esta parte simplemente optamos por usar el \emph{lock} del casillero en el tablero de letras al inicio del algoritmo en modo escritura, y lo liberamos al final. De este modo, cualquiera que desee leer o escribir el mismo casillero deberá esperar:
+
+\begin{algorithm}[H]
+\caption{letraRecibida'($mensaje$)}
+\begin{algorithmic}[1]
+    \STATE $casillero \leftarrow$ interpretarCasilleroDeMensaje($mensaje$)
+    \STATE wlock($locksLetras[fila(casillero)][columna(casillero)]$)
+    \STATE ...
+    \STATE wunlock($locksLetras[fila(casillero)][columna(casillero)]$)
+\end{algorithmic}
+\end{algorithm}
+
+Por otro lado, la función auxiliar original para indicar si una ficha es válida en una palabra:
+
+\begin{algorithm}[H]
+\caption{esFichaValidaEnPalabra($casillero$, $palabra$)}
+\begin{algorithmic}[1]
+    \IF{$casillero$ cae afuera del tablero}
+        \RETURN INVALIDA.
+    \ENDIF
+    \IF{$tableroLetras[fila(casillero)][columna(casillero)] \neq \emptyset$}
+        \RETURN INVALIDA.
+    \ENDIF
+    \IF{$palabra \neq \emptyset$}
+        \IF{$casillero$ está alineado horizontalmente o verticalmente con $palabra$}
+            \FOR{cada $casillero'$ entre $palabra$ y $casillero$}
+                \IF{$casillero' \notin palabra$ y $tableroPalabras[fila(casillero')][columna(casillero')] = \emptyset$}
+                    \RETURN INVALIDA.
+                \ENDIF
+            \ENDFOR
+        \ELSE
+            \RETURN INVALIDA.
+        \ENDIF
+    \ENDIF
+    \RETURN VALIDA.
+\end{algorithmic}
+\end{algorithm}
+
+\noindent En este caso estamos en un problema cuando queremos leer el tablero de palabras, asi que utilizamos el \emph{lock} de cada posición que queremos leer en modo lectura:
+
+\begin{algorithm}[H]
+\caption{esFichaValidaEnPalabra'($casillero$, $palabra$)}
+\begin{algorithmic}[1]
+    \STATE ...
+    \FOR{cada $casillero'$ entre $palabra$ y $casillero$}
+        \STATE rlock($locksPalabras[fila(casillero')][columna(casillero')]$)
+        \IF{$casillero' \notin palabra$ y $tableroPalabras[fila(casillero')][columna(casillero')] = \emptyset$}
+            \STATE runlock($locksPalabras[fila(casillero')][columna(casillero')]$)
+            \RETURN INVALIDA.
+        \ENDIF
+        \STATE runlock($locksPalabras[fila(casillero')][columna(casillero')]$)
+    \ENDFOR
+    \STATE ...
+\end{algorithmic}
+\end{algorithm}
+
+Por último, la función auxiliar para quitar todas las letras de una palabra:
+
+\begin{algorithm}[H]
+\caption{quitarLetras($palabra$)}
+\begin{algorithmic}[1]
+    \FOR{cada $casillero$ en $palabra$}
+        \STATE $tableroLetras[fila(casillero)][columna(casillero)] \leftarrow \emptyset$.
+    \ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\noindent Aquí simplemente utilizamos los \emph{locks} de cada casillero que queremos borrar en modo escritura:
+
+\begin{algorithm}[H]
+\caption{quitarLetras'($palabra$)}
+\begin{algorithmic}[1]
+    \FOR{cada $casillero$ en $palabra$}
+        \STATE wlock($locksLetras[fila(casillero)][columna(casillero)]$)
+        \STATE $tableroLetras[fila(casillero)][columna(casillero)] \leftarrow \emptyset$.
+        \STATE wunlock($locksLetras[fila(casillero)][columna(casillero)]$)
+    \ENDFOR
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Palabra}
+
+\subsubsection{Update}

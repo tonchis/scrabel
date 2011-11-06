@@ -1,1 +1,9 @@
 *.o
+informe/*.aux
+informe/*.bbl
+informe/*.blg
+informe/*.log
+informe/*.out
+informe/*.gz
+informe/*.toc
+informe/*.pdf

@@ -7,6 +7,11 @@ RWLock :: RWLock() {
 }
 
 RWLock :: ~RWLock() {
+  while(!writers_queue.empty()){
+    Batch* current_batch = writers_queue.front();
+    writers_queue.pop();
+    delete current_batch;
+  }
   sem_destroy(&mutex);
 }
 
@@ -53,7 +58,7 @@ void RWLock :: runlock() {
     if(current_batch->readers > 0){
       sem_post(&mutex);
     }else{
-      if(current_batch->writed){
+      if(current_batch->written){
         writers_queue.pop();
         delete current_batch;
       }
@@ -69,7 +74,7 @@ void RWLock :: runlock() {
 void RWLock :: wunlock() {
   sem_wait(&mutex);
   Batch* current_batch = writers_queue.front();
-  current_batch->writed = true;
+  current_batch->written = true;
   if(current_batch->readers > 0){
     sem_post(&(current_batch->readers_sem));
     sem_post(&mutex);
