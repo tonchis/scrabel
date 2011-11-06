@@ -1,0 +1,97 @@
+\section{RWLock}
+
+Para resolver esta parte del trabajo se nos solicitó implementar un Read-Write Lock libre de inanición utilizando
+unicamente semáforos POSIX, respetando la interfaz provista. Esto lo resolvimos implementando las funciones declaradas en \verb|RWLock.h|.
+
+	Para garantizar que el sistema sea libre de inanición decidimos implementar una estructura que contiene una cola de lotes de lectores asociados a cada pedido de escritura. 
+	La estructura funciona de la siguiente manera: cada vez que llega un pedido de \textit{lock} de escritura, se encola un lote con la información de éste y todos los pedidos de lectura que lleguen a continuación de él. En caso que luego de un pedido de \textit{lock} de escritura llegue otro de igual tipo, el lote asociado al primer  elemento encolado, será vacío.   
+
+
+\begin{verbatim}
+struct Batch {
+  sem_t write_permission;
+  sem_t reader
+  s_sem;
+  int readers;
+  bool writed;
+}
+\end{verbatim}
+	
+\begin{algorithm}[H]
+\caption{rlock()}
+\begin{algorithmic}[1]
+\STATE wait(mutex)
+\STATE incrementamos la cantidad de lectores en una unidad
+\IF{la cola de lotes está vacía}
+\STATE signal(mutex)
+\ELSE
+\STATE agregamos el pedido de \textit{lock} de lectura al último lote de la cola
+\STATE signal(mutex)
+\STATE esperamos a que alguien nos avise que podemos leer 
+\STATE avisamos a otro lector que puede leer
+\ENDIF
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}[H]
+\caption{runlock()}
+\begin{algorithmic}[1]
+\STATE wait(mutex)
+\STATE decrementamos la cantidad de lectores en una unidad
+\IF{la cola de lotes no está vacía}
+	\STATE tomamos el \textit{lock} de escritura al que pertenece
+	\IF{todavía hay pedidos de \textit{lock} de lectura en el lote}
+		\STATE decrementamos la cantidad de los mismos en una unidad
+	\ENDIF
+	\IF{no hay pedidos de \textit{lock} de lectura en el lote}
+		\IF{el pedido de escritura asociado al lote actual ya terminó}
+			\STATE sacamos el lote de la cola
+		\ENDIF
+		\IF{la cola de lotes no está vacía}
+			\STATE le avisamos al siguiente lote que ya puede escribir
+		\ENDIF
+	\ENDIF	 
+\ENDIF
+\STATE signal(mutex)
+
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{wlock()}
+\begin{algorithmic}[1]
+\STATE creamos un lote nuevo
+\STATE wait(mutex)
+\STATE encolamos el lote nuevo
+\IF{la cola contiene un solo lote y no hay lectores}
+\STATE dejamos que el lote nuevo escriba
+\ENDIF
+
+\STATE signal(mutex)
+\STATE esperamos que el nuevo lote pueda escribir
+
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+\caption{wunlock()}
+\begin{algorithmic}[1]
+\STATE signal(mutex)
+\STATE tomamos el primer lote de la cola
+\STATE lo marcamos como que ya escribió
+\IF{tiene lectores asociados}
+\STATE los dejamos leer
+%\STATE signal(mutex)
+\ELSE
+\STATE quitamos el lote de la cola
+\IF{la cola no está vacía}
+\STATE dejamos que el siguiente lote escriba
+\ENDIF
+%\STATE signal(mutex)
+\ENDIF
+\STATE signal(mutex)
+\end{algorithmic}
+\end{algorithm}
+
+
