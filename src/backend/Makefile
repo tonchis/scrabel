@@ -6,8 +6,8 @@ BINARIES = backend lock_test
 
 all: $(BINARIES)
 
-backend: Backend_mono.cpp Backend_mono.h Enviar_recibir.o Enviar_recibir.h Encabezado.h Casillero.h RWLock.o
-	$(CC) $(LDFLAGS) $(CFLAGS) Backend_mono.cpp Enviar_recibir.o RWLock.o -o backend
+backend: Backend.cpp Backend.h Enviar_recibir.o Enviar_recibir.h Encabezado.h Casillero.h RWLock.o
+	$(CC) $(LDFLAGS) $(CFLAGS) Backend.cpp Enviar_recibir.o RWLock.o -o backend
 
 lock_test: RWLock_test.cpp RWLock.o
 	$(CC) $(CFLAGS) -lpthread RWLock.o RWLock_test.cpp -o lock_test
