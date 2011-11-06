@@ -1,7 +1,7 @@
 #include <iostream>
 #include <pthread.h>
 #include <signal.h>
-#include <set>
+#include <map>
 
 #include "Backend.h"
 #include "RWLock.h"
@@ -23,7 +23,7 @@ vector<vector<RWLock> > locks_tablero_letras;
 vector<vector<RWLock> > locks_tablero_palabras;
 RWLock lock_tablero_palabras;
 
-set<pthread_t*> threads;
+map<int, pthread_t*> threads;
 
 
 bool cargar_int(const char* numero, unsigned int& n) {
@@ -107,7 +107,7 @@ int main(int argc, const char* argv[]) {
 		else {
             pthread_t tid;
             pthread_create(&tid, NULL, atendedor_de_jugador, (void*) socketfd_cliente);
-            threads.insert(&tid);
+            threads[socketfd_cliente] = &tid;
 		}
 	}
 
@@ -323,12 +323,14 @@ void cerrar_servidor(int signal) {
 	if (socket_servidor != -1)
 		close(socket_servidor);
         
-    set<pthread_t*>::iterator it;
+    map<int, pthread_t*>::iterator it;
     
     for (it = threads.begin(); it != threads.end(); it++)
     {
-        pthread_kill(**it, 9);
+        pthread_kill(*(it->second), 9);
     }
+    
+    threads.clear();
     
 	exit(EXIT_SUCCESS);
 }
@@ -341,6 +343,8 @@ void terminar_servidor_de_jugador(int socket_fd, list<Casillero>& palabra_actual
 	quitar_letras(palabra_actual);
 
 	pthread_exit((void*) -1);
+    
+    threads.erase(socket_fd);
 }
 
 

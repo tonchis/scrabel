@@ -7,3 +7,5 @@ informe/*.out
 informe/*.gz
 informe/*.toc
 informe/*.pdf
+src/backend/backend
+src/backend/lock_test
