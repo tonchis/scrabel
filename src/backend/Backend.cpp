@@ -215,6 +215,8 @@ void *atendedor_de_jugador(void* parametro) {
 			terminar_servidor_de_jugador(socket_fd, palabra_actual);
 		}
 	}
+
+  return NULL;
 }
 
 
