@@ -12,7 +12,17 @@ Para asegurar la correcta sincronización entre clientes, creamos los siguientes
 
 \end{itemize}
 
-El motivo de esta desición la vamos a ir explicando en cada una de las peticiones de cliente que puede recibir el servidor.
+El motivo de esta desición la vamos a ir explicando en cada una de las peticiones de cliente que puede recibir el servidor. Por otro lado, utilizaremos las siguientes variables globales en los algoritmos:
+
+\begin{itemize}
+
+    \item una lista de casilleros llamada $palabra$ que representa las letras acumuladas que el usuario envió;
+    
+    \item una matriz de casilleros llamada $tableroLetras$ que representa las letras que todos los usuarios enviaron;
+    
+    \item una matriz de casilleros llamada $tableroPalabras$ que representa las letras de las palabras que todos los usuarios formaron.
+
+\end{itemize}
 
 \subsubsection{Letra}
 
@@ -150,7 +160,7 @@ Esta petición envia el estado del tablero de palabras. El algoritmo original ti
     \FOR{cada $casillero$ en $tableroPalabras$}
         \STATE $buffer \leftarrow buffer +$ codificarCasilleroParaMensaje($casillero$).
     \ENDFOR
-    \STATE enviar($buffer$)
+    \STATE enviar($buffer$).
 \end{algorithmic}
 \end{algorithm}
 
