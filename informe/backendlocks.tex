@@ -12,7 +12,7 @@ Para asegurar la correcta sincronización entre clientes, creamos los siguientes
 
 \end{itemize}
 
-El motivo de esta desición la vamos a ir explicando en cada una de las peticiones de cliente que puede recibir el servidor. Por otro lado, utilizaremos las siguientes variables globales en los algoritmos:
+El motivo de esta decisión la vamos a ir explicando en cada una de las peticiones de cliente que puede recibir el servidor. Por otro lado, utilizaremos las siguientes variables globales en los algoritmos:
 
 \begin{itemize}
 
@@ -81,7 +81,7 @@ Por otro lado, la función auxiliar original para indicar si una ficha es válid
 \end{algorithmic}
 \end{algorithm}
 
-\noindent En este caso estamos en un problema cuando queremos leer el tablero de palabras, asi que utilizamos el \emph{lock} de cada posición que queremos leer en modo lectura:
+\noindent En este caso estamos en un problema cuando queremos leer el tablero de palabras, así que utilizamos el \emph{lock} de cada posición que queremos leer en modo lectura:
 
 \begin{algorithm}[H]
 \caption{esFichaValidaEnPalabra'($casillero$, $palabra$)}
@@ -138,7 +138,7 @@ Esta petición pone todas las letras acumulada de la palabra actual del usuario 
 \end{algorithmic}
 \end{algorithm}
 
-\noindent Para lograr que el pasaje de todas las letras no sea interrumpido por ningún motivo, utilizamos el lock completo del tablero de palabras para todo el algoritmo en mod escritura:
+\noindent Para lograr que el pasaje de todas las letras no sea interrumpido por ningún motivo, utilizamos el lock completo del tablero de palabras para todo el algoritmo en modo escritura:
 
 \begin{algorithm}[H]
 \caption{palabraRecibida'()}
@@ -151,7 +151,7 @@ Esta petición pone todas las letras acumulada de la palabra actual del usuario 
 
 \subsubsection{Update}
 
-Esta petición envia el estado del tablero de palabras. El algoritmo original tiene el siguiente aspecto:
+Esta petición envía el estado del tablero de palabras. El algoritmo original tiene el siguiente aspecto:
 
 \begin{algorithm}[H]
 \caption{actualizacionRequerida()}
