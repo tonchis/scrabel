@@ -1,7 +1,7 @@
 \section{RWLock}
 
 Para resolver esta parte del trabajo se nos solicitó implementar un Read-Write Lock libre de inanición utilizando
-unicamente semáforos POSIX, respetando la interfaz provista. Esto lo resolvimos implementando las funciones declaradas en \verb|RWLock.h|.
+únicamente semáforos POSIX, respetando la interfaz provista. Esto lo resolvimos implementando las funciones declaradas en \verb|RWLock.h|.
 
 	Para garantizar que el sistema sea libre de inanición decidimos implementar una estructura que contiene una cola de lotes de lectores asociados a cada pedido de escritura. 
 	La estructura funciona de la siguiente manera: cada vez que llega un pedido de \textit{lock} de escritura, se encola un lote con la información de éste y todos los pedidos de lectura que lleguen a continuación de él. En caso que luego de un pedido de \textit{lock} de escritura llegue otro de igual tipo, el lote asociado al primer  elemento encolado, será vacío.   
