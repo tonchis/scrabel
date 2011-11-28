@@ -117,7 +117,8 @@ int main(int argc, const char* argv[]) {
 
 
 void *atendedor_de_jugador(void* parametro) {
-    int socket_fd = (int) parametro;
+    int socket_fd = (intptr_t) parametro;
+    printf("ESTE ES TU SOCKET FD CAPO: %d\n", socket_fd);
 
 	// variables locales del jugador
 	char nombre_jugador[21];
