@@ -137,7 +137,7 @@ void *atendedor_de_jugador(void* parametro) {
 
   cout << "Esperando que juegue " << nombre_jugador << endl;
   
-  bool error_rango;
+  bool error_rango, error_ocupado;
 
   while (true) {
     // espera una letra o una confirmación de palabra
@@ -154,14 +154,22 @@ void *atendedor_de_jugador(void* parametro) {
       // sacamos esta verificacion de "es_ficha_valida_en_palabra" porque la tenemos que hacer antes del lock
       error_rango = ficha.fila < 0 || ficha.fila > alto - 1 || ficha.columna < 0 || ficha.columna > ancho - 1;
       
-      printf("La ficha %d %d esta en rango? %d\n", ficha.fila, ficha.columna, error_rango);
+      printf("La ficha %d %d esta en rango? %d\n", ficha.fila, ficha.columna, !error_rango);
 
-      //bloqueo el casillero
-      if(!error_rango) locks_tablero_letras[ficha.fila][ficha.columna].wlock();
+      // bloqueo el casillero
+      if(!error_rango) {
+        printf("Lock de escritura para el tablero de letras en %d %d.\n", ficha.fila, ficha.columna);
+        locks_tablero_letras[ficha.fila][ficha.columna].wlock();
+      }
+      
+      // si el casillero está ocupado, tampoco es válida
+      error_ocupado = tablero_letras[ficha.fila][ficha.columna] != VACIO;
 
       // ficha contiene la nueva letra a colocar
       // verificar si es una posición válida del tablero
-      if (!error_rango && es_ficha_valida_en_palabra(ficha, palabra_actual)) {
+      if (!error_rango && !error_ocupado && es_ficha_valida_en_palabra(ficha, palabra_actual)) {
+        printf("La ficha %d %d es valida.\n", ficha.fila, ficha.columna);
+        
         palabra_actual.push_back(ficha);
         tablero_letras[ficha.fila][ficha.columna] = ficha.letra;
         // OK
@@ -170,7 +178,18 @@ void *atendedor_de_jugador(void* parametro) {
           terminar_servidor_de_jugador(socket_fd, palabra_actual);
         }
       }
+      // no se pudo poner la letra por algun motivo
       else {
+        printf("La ficha %d %d no es valida. Limpiando palabra...\n", ficha.fila, ficha.columna);
+        
+        // si el problema era que estaba ocupado
+        // lo desbloqueo ahora por las dudas
+        // solo para el caso en el cual estaba ocupado por el mismo cliente
+        if(error_ocupado) {
+          printf("Unlock de escritura para el tablero de letras en %d %d.\n", ficha.fila, ficha.columna);
+          locks_tablero_letras[ficha.fila][ficha.columna].wunlock();
+        }
+        
         quitar_letras(palabra_actual);
         // ERROR
         if (enviar_error(socket_fd) != 0) {
@@ -179,8 +198,11 @@ void *atendedor_de_jugador(void* parametro) {
         }
       }
 
-      //desbloqueo el casillero
-      if(!error_rango) locks_tablero_letras[ficha.fila][ficha.columna].wunlock();
+      // desbloqueo el casillero
+      if(!error_rango && !error_ocupado) {
+        printf("Unlock de escritura para el tablero de letras en %d %d.\n", ficha.fila, ficha.columna);
+        locks_tablero_letras[ficha.fila][ficha.columna].wunlock();
+      }
     }
     else if (comando == MSG_PALABRA) {
             //esperamos a que nadie este haciendo un update del tablero de palabras
@@ -362,21 +384,17 @@ void terminar_servidor_de_jugador(int socket_fd, list<Casillero>& palabra_actual
 
 void quitar_letras(list<Casillero>& palabra_actual) {
   for (list<Casillero>::const_iterator casillero = palabra_actual.begin(); casillero != palabra_actual.end(); casillero++) {
-        locks_tablero_letras[casillero->fila][casillero->columna].wlock();
+    locks_tablero_letras[casillero->fila][casillero->columna].wlock();
     tablero_letras[casillero->fila][casillero->columna] = VACIO;
-        locks_tablero_letras[casillero->fila][casillero->columna].wunlock();
+    locks_tablero_letras[casillero->fila][casillero->columna].wunlock();
   }
   palabra_actual.clear();
 }
 
-
+// esta funcion ahora solo verifica que la palabra se pueda armar adecuadamente
+// con las letras que ya puso el cliente
+// mas las letras de palabras formadas
 bool es_ficha_valida_en_palabra(const Casillero& ficha, const list<Casillero>& palabra_actual) {
-    // este casillero ya estaba lockeado desde antes
-  // si el casillero está ocupado, tampoco es válida
-  if (tablero_letras[ficha.fila][ficha.columna] != VACIO) {
-    return false;
-  }
-
   if (palabra_actual.size() > 0) {
     // no es la primera letra de la palabra, ya hay fichas colocadas para esta palabra
     Casillero mas_distante = casillero_mas_distante_de(ficha, palabra_actual);
