@@ -1,0 +1,20 @@
+> SOY Gonza
+< TABLERO 7 12
+                        > SOY Ganso
+                        < TABLERO 7 12
+                        > LETRA 3 4 E
+                        < OK
+> LETRA 4 4 D
+< OK
+                        > LETRA 5 4 D
+                        < ERROR
+> PALABRA
+< OK
+                        > LETRA 5 4 D
+                        < OK
+                        > LETRA 3 4 F
+                        < OK
+                        > PALABRA
+                        < OK
+> UPDATE
+< STATUS -------------------------F------D------D--------------------------------------------

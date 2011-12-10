@@ -1,0 +1,6 @@
+> SOY Fulano
+< TABLERO 7 12
+> LETRA 6 3 Y
+< OK
+> LETRA 6 3 Y
+< ERROR

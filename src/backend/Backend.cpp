@@ -136,6 +136,8 @@ void *atendedor_de_jugador(void* parametro) {
   }
 
   cout << "Esperando que juegue " << nombre_jugador << endl;
+  
+  bool error_rango;
 
   while (true) {
     // espera una letra o una confirmación de palabra
@@ -147,13 +149,19 @@ void *atendedor_de_jugador(void* parametro) {
         // no es un mensaje LETRA bien formado, hacer de cuenta que nunca llegó
         continue;
       }
+      
+      // si está fuera del tablero, no es válida
+      // sacamos esta verificacion de "es_ficha_valida_en_palabra" porque la tenemos que hacer antes del lock
+      error_rango = ficha.fila < 0 || ficha.fila > alto - 1 || ficha.columna < 0 || ficha.columna > ancho - 1;
+      
+      printf("La ficha %d %d esta en rango? %d\n", ficha.fila, ficha.columna, error_rango);
 
-            //bloqueo el casillero
-            locks_tablero_letras[ficha.fila][ficha.columna].wlock();
+      //bloqueo el casillero
+      if(!error_rango) locks_tablero_letras[ficha.fila][ficha.columna].wlock();
 
       // ficha contiene la nueva letra a colocar
       // verificar si es una posición válida del tablero
-      if (es_ficha_valida_en_palabra(ficha, palabra_actual)) {
+      if (!error_rango && es_ficha_valida_en_palabra(ficha, palabra_actual)) {
         palabra_actual.push_back(ficha);
         tablero_letras[ficha.fila][ficha.columna] = ficha.letra;
         // OK
@@ -171,8 +179,8 @@ void *atendedor_de_jugador(void* parametro) {
         }
       }
 
-            //desbloqueo el casillero
-            locks_tablero_letras[ficha.fila][ficha.columna].wunlock();
+      //desbloqueo el casillero
+      if(!error_rango) locks_tablero_letras[ficha.fila][ficha.columna].wunlock();
     }
     else if (comando == MSG_PALABRA) {
             //esperamos a que nadie este haciendo un update del tablero de palabras
@@ -363,11 +371,6 @@ void quitar_letras(list<Casillero>& palabra_actual) {
 
 
 bool es_ficha_valida_en_palabra(const Casillero& ficha, const list<Casillero>& palabra_actual) {
-  // si está fuera del tablero, no es válida
-  if (ficha.fila < 0 || ficha.fila > alto - 1 || ficha.columna < 0 || ficha.columna > ancho - 1) {
-    return false;
-  }
-
     // este casillero ya estaba lockeado desde antes
   // si el casillero está ocupado, tampoco es válida
   if (tablero_letras[ficha.fila][ficha.columna] != VACIO) {
